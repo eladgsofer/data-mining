@@ -7,10 +7,12 @@ import statsmodels.api as sm
 def normalize_col(df, col_name, scaled_flag=True):
     if scaled_flag:
         df[col_name] = df[col_name] / max(df[col_name])
+        return max(df[col_name]), max(df[col_name])
     else:
         mean = np.mean(df[col_name])
         std = np.std(df[col_name])
         df[col_name] = (df[col_name] - mean) / std
+        return mean,std
 
 
 
@@ -26,8 +28,12 @@ print(train.head())
 print(train.describe())
 
 # data processing
+train = train[train['Life expectancy '].notna()] #drop lines with NaN in Life expectancy
+print(train.describe())
 train.Status = [1 if stat=="Developed" else 0 for stat in train.Status] # make Status binary, Developed=1, Developing=0
 normalize_col(train,"Adult Mortality")
+
+
 
 train.drop(['Year'], axis=1, inplace=True)
 train.drop([' thinness 5-9 years'], axis=1, inplace=True)

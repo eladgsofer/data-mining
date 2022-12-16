@@ -58,6 +58,7 @@ pd.set_option('display.width', None)
 # read df
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
+ID = test['ID']
 print(train.head())
 print(train.describe())
 train, scale_factors = data_processing_train(train)
@@ -82,8 +83,8 @@ print(model.summary())
 x_test = data_processing_test(test, scale_factors)
 y_test = model.predict(test)
 res = pd.DataFrame()
-res['ID'] = np.arange(1,len(y_test)+1)
-res['Life expectancy '] = y_test*scale_factors[0][1]+scale_factors[0][0]
+res['ID'] = ID
+res['Life expectancy'] = y_test*scale_factors[0][1]+scale_factors[0][0]
 res.to_csv('test_res.csv', index=False)
 
 

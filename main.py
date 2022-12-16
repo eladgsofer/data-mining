@@ -31,11 +31,13 @@ def data_processing_train(df):
 
     df.bfill(inplace=True)   # fill empty cells with the next cell value
 
+    country_code = pd.get_dummies(df['Country'])
     df.drop(['Country'], axis=1, inplace=True)
-    return df, scaling_factors
+    df = pd.concat([df, country_code], axis=1)
+    return df, scaling_factors, country_code.columns
 
 
-def data_processing_test(df, scale_factor):
+def data_processing_test(df, scale_factor, country_names):
     df.drop(['ID'], axis=1, inplace=True)   # drop the ID column
 
     df.Status = [1 if stat=="Developed" else 0 for stat in df.Status] # make Status binary, Developed=1, Developing=0
@@ -47,7 +49,11 @@ def data_processing_test(df, scale_factor):
 
     df.bfill(inplace=True)   # fill empty cells with the next cell value
 
+    country_code = pd.DataFrame(data=np.zeros((len(df),len(country_names))), columns=country_names)
+    for i in range(len(df)):
+        country_code.loc[i][df.loc[i]['Country']] = 1
     df.drop(['Country'], axis=1, inplace=True)
+    df = pd.concat([df, country_code], axis=1)
     return df
 
 
@@ -59,32 +65,26 @@ pd.set_option('display.width', None)
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 ID = test['ID']
+train, scale_factors, country_names = data_processing_train(train)
 print(train.head())
 print(train.describe())
-train, scale_factors = data_processing_train(train)
-print(train.head())
-print(train.describe())
-
-# train.drop(['Status'], axis=1, inplace=True)
 
 y_train = np.array(train['Life expectancy '])
 train.drop(['Life expectancy '], axis=1, inplace=True)
 x_train = train.to_numpy()
-# x = np.array(sm.add_constant(x))
 
 #fit linear regression model
 model = sm.OLS(y_train, x_train).fit()
-
 
 #view model summary
 print(model.summary())
 
 # predict
-x_test = data_processing_test(test, scale_factors)
-y_test = model.predict(test)
+x_test = data_processing_test(test, scale_factors, country_names)
+y_test = model.predict(x_test)
 res = pd.DataFrame()
 res['ID'] = ID
 res['Life expectancy'] = y_test*scale_factors[0][1]+scale_factors[0][0]
-res.to_csv('test_res.csv', index=False)
+res.to_csv('test_res2.csv', index=False)
 
 

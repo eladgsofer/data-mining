@@ -3,6 +3,10 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+import pycountry_convert as pc
+
+
+
 
 def normalize_col(df, col_name, scaled_flag=True):
     if scaled_flag:
@@ -28,10 +32,14 @@ print(train.head())
 print(train.describe())
 
 # data processing
-train = train[train['Life expectancy '].notna()] #drop lines with NaN in Life expectancy
+train = train[train['Life expectancy '].notna()]    # drop lines with NaN in Life expectancy
 print(train.describe())
 train.Status = [1 if stat=="Developed" else 0 for stat in train.Status] # make Status binary, Developed=1, Developing=0
-normalize_col(train,"Adult Mortality")
+
+scaling_factor = []     # list of all the scaling factor of the the floats columns
+for i in range(3, 22):      # normalize all the float columns
+    col_name = train.columns[i]
+    scaling_factor.append(normalize_col(train, col_name))
 
 
 

@@ -5,7 +5,7 @@ import numpy as np
 import statsmodels.api as sm
 import glob
 import os
-from mlxtend.feature_selection import SequentialFeatureSelector as sfs
+# from mlxtend.feature_selection import SequentialFeatureSelector as sfs
 
 # functions
 def normalize_col(df, col_name, scaled_flag=True):
@@ -18,6 +18,13 @@ def normalize_col(df, col_name, scaled_flag=True):
         std = np.std(df[col_name])
         df[col_name] = (df[col_name] - mean) / std
         return mean,std
+
+
+# def nullify(df, df_series):
+#
+#
+#         # for c in df_series:
+
 
 
 def data_processing_train(df):
@@ -33,7 +40,24 @@ def data_processing_train(df):
         col_name = df.columns[i]
         scaling_factors.append(normalize_col(df, col_name, scaled_flag=True))
 
+    for row_idx in range(len(df)):
+        series = df.iloc[row_idx]
+
+        if series.isnull().sum() > 0:
+            for col_idx, item in enumerate(series):
+                if pd.isnull(item):
+                    country_filter = df["Country"] == series["Country"]
+                    mean = pd.Series(list(filter(lambda x: not np.isnan(x),df[df["Country"] == series["Country"]].iloc[:,col_idx], ))).mean()
+                    new_series = df[country_filter].iloc[:,col_idx].fillna(mean)
+                    # Replace the new series with the old
+                    df.loc[country_filter, df.columns[col_idx]] = new_series
+
+
+
+
+
     df.bfill(inplace=True)   # fill empty cells with the next cell value
+
 
     country_code = pd.get_dummies(df['Country'])
     df.drop(['Country'], axis=1, inplace=True)
@@ -52,6 +76,7 @@ def data_processing_test(df, scale_factor, country_names):
 
     for i in range(3, 21):      # normalize all the float columns
         df.iloc[:,i] = (df.iloc[:,i]-scale_factor[i-2][0])/scale_factor[i-2][1]
+
 
     df.bfill(inplace=True)   # fill empty cells with the next cell value
 
@@ -90,7 +115,9 @@ print(model.summary())
 ID = test['ID']
 x_test = data_processing_test(test, scale_factors, country_names)
 x_test = sm.add_constant(x_test)
+
 y_test = model.predict(x_test)
+
 res = pd.DataFrame()
 res['ID'] = ID
 res['Life expectancy'] = y_test*scale_factors[0][1]+scale_factors[0][0]

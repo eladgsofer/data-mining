@@ -5,6 +5,7 @@ import numpy as np
 import statsmodels.api as sm
 import glob
 import os
+from mlxtend.feature_selection import SequentialFeatureSelector as sfs
 
 # functions
 def normalize_col(df, col_name, scaled_flag=True):
@@ -20,7 +21,8 @@ def normalize_col(df, col_name, scaled_flag=True):
 
 
 def data_processing_train(df):
-    df = df[df['Life expectancy '].notna()]    # drop lines with NaN in Life expectancy
+    df.columns = [name.strip() for name in df.columns] # remove any whitespace at the start and/or end of columns names
+    df = df[df['Life expectancy'].notna()]    # drop lines with NaN in Life expectancy
 
     df.Status = [1 if stat=="Developed" else 0 for stat in df.Status] # make Status binary, Developed=1, Developing=0
 
@@ -36,10 +38,13 @@ def data_processing_train(df):
     country_code = pd.get_dummies(df['Country'])
     df.drop(['Country'], axis=1, inplace=True)
     df = pd.concat([df, country_code], axis=1)
+    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources',
+             'Adult Mortality'], axis=1, inplace=True)
     return df, scaling_factors, country_code.columns
 
 
 def data_processing_test(df, scale_factor, country_names):
+    df.columns = [name.strip() for name in df.columns]  # remove any whitespace at the start and/or end of columns names
     df.drop(['ID'], axis=1, inplace=True)   # drop the ID column
 
     df.Status = [1 if stat=="Developed" else 0 for stat in df.Status] # make Status binary, Developed=1, Developing=0
@@ -56,6 +61,8 @@ def data_processing_test(df, scale_factor, country_names):
         country_code.loc[i][df.loc[i]['Country']] = 1
     df.drop(['Country'], axis=1, inplace=True)
     df = pd.concat([df, country_code], axis=1)
+    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources',
+             'Adult Mortality'], axis=1, inplace=True)
     return df
 
 
@@ -66,14 +73,14 @@ pd.set_option('display.width', None)
 # read df
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
-ID = test['ID']
+
 train, scale_factors, country_names = data_processing_train(train)
 print(train.head())
 print(train.describe())
 
-y_train = np.array(train['Life expectancy '])
-train.drop(['Life expectancy '], axis=1, inplace=True)
-x_train = train.to_numpy()
+y_train = train['Life expectancy']
+x_train = train.drop(['Life expectancy'], axis=1)
+x_train = sm.add_constant(x_train)
 
 #fit linear regression model
 model = sm.OLS(y_train, x_train).fit()
@@ -82,7 +89,9 @@ model = sm.OLS(y_train, x_train).fit()
 print(model.summary())
 
 # predict
+ID = test['ID']
 x_test = data_processing_test(test, scale_factors, country_names)
+x_test = sm.add_constant(x_test)
 y_test = model.predict(x_test)
 res = pd.DataFrame()
 res['ID'] = ID

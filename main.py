@@ -88,10 +88,10 @@ res = pd.DataFrame()
 res['ID'] = ID
 res['Life expectancy'] = y_test*scale_factors[0][1]+scale_factors[0][0]
 
-# save results
-list_of_files = glob.glob('test_results/*.csv') # * means all if need specific format then *.csv
-latest_file = max(list_of_files, key=os.path.getctime)
-new_file = latest_file[:-5]+str(int(latest_file[-5])+1)+latest_file[-4:]
-res.to_csv(new_file, index=False)
+# save results in the "test_results" directory with the next index name
+list_of_files = glob.glob('test_results/*.csv')     # * means all if need specific format then *.csv
+latest_file = max(list_of_files, key=os.path.getctime)      # the latest file name
+new_file = latest_file[:-5]+str(int(latest_file[-5])+1)+latest_file[-4:]    # new file name (next index from latest)
+res.to_csv(new_file, index=False)   # saving
 
 

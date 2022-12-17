@@ -38,8 +38,7 @@ def data_processing_train(df):
     country_code = pd.get_dummies(df['Country'])
     df.drop(['Country'], axis=1, inplace=True)
     df = pd.concat([df, country_code], axis=1)
-    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources',
-             'Adult Mortality'], axis=1, inplace=True)
+    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources'], axis=1, inplace=True)
     return df, scaling_factors, country_code.columns
 
 
@@ -61,8 +60,7 @@ def data_processing_test(df, scale_factor, country_names):
         country_code.loc[i][df.loc[i]['Country']] = 1
     df.drop(['Country'], axis=1, inplace=True)
     df = pd.concat([df, country_code], axis=1)
-    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources',
-             'Adult Mortality'], axis=1, inplace=True)
+    df.drop(['BMI', 'Population', 'thinness  1-19 years', 'thinness 5-9 years', 'Income composition of resources'], axis=1, inplace=True)
     return df
 
 

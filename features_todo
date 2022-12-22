@@ -1,0 +1,11 @@
+# train.loc[(train["Life expectancy"] < 0.8) & (train["Adult Mortality"] < 0.063), "Adult Mortality" ] = regression -1
+# train.loc[((train["under-five-deaths"] < 0.19), "infant deaths" ] = regression -1
+# percentage expenditure (1-(x-1)^4)^0.25
+# measles > 0.18 = f^-1
+# dipheteria = dipheteria<0.15 = f^-1
+# HIV = quadratic
+# GDP = squart - outliers === LE<0.8 & GDP > 0.4
+# Schooling = schooling<0.03 = f^-1
++  schooling > 0.88 & LE<0.85 = f^-1
+
+# Remove heiptheheis B, alcohol, under-five-deaths, polio

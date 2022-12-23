@@ -8,6 +8,9 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn import linear_model
 from sklearn import svm
 import statsmodels.api as sm
+import seaborn as sns
+
+np.random.seed(10)
 
 # paths = []
 # import os
@@ -85,6 +88,7 @@ test[ "Status"] = test[ "Status"].fillna(0)
 train = train[train["Life expectancy "].notna()]
 
 
+
 for column in train:
     if column != "Status" and column != "Life expectancy ":
         avg = train[column].median()
@@ -98,28 +102,62 @@ for column in test:
         test[column] = (test[column] - test[column].mean())/test[column].std()
 
 
-mean = train["Life expectancy "].mean()
-std = train["Life expectancy "].std()
-train["Life expectancy "] = (train["Life expectancy "] - mean).div(std)
-train["Life expectancy "] = train["Life expectancy "] + np.random.normal(0, 0.01)
+
 
 
 # train.to_csv('check_train.csv',index=False)
 # test.to_csv('check_test.csv',index=False)
 
-X = train.drop(columns=['Life expectancy '])
+
+mean = train["Life expectancy "].mean()
+std = train["Life expectancy "].std()
+train["Life expectancy "] = (train["Life expectancy "] - mean).div(std)
+# train["Life expectancy "] = train["Life expectancy "] + np.random.normal(0, 0.01)
+
+
+def remove_outliers(x):
+
+    filter_mapper = {"Adult Mortality": (train['Life expectancy '] < 0.22) & (x["Adult Mortality"] < -0.6),
+                     # "under-five deaths ": x["under-five deaths "] > 2,
+                     "Schooling": (x["Schooling"] < -3.3)}
+
+
+    #  "dipheteria", "GDP"
+    for feature in ["Adult Mortality", "under-five deaths ", "Schooling"]:
+        sns.pairplot(train[[feature, "Life expectancy "]])
+        outliers_filter = filter_mapper[feature]
+
+        x_not_outliers = x[~outliers_filter]
+
+        x_not_outliers_f1 = x_not_outliers[feature]
+        y_not_outliers_f1 = x_not_outliers['Life expectancy ']
+
+        y_outliers = train.loc[outliers_filter, 'Life expectancy ']
+
+        f_1_model = sm.OLS(x_not_outliers_f1,y_not_outliers_f1).fit()
+
+
+        # receive the y and do the inverse f^-1(y) = x
+        train.loc[outliers_filter, feature] = f_1_model.predict(y_outliers)
+        sns.pairplot(train[[feature, "Life expectancy "]])
+
+        pass
+
+# remove_outliers(train)
+
+
 y = train['Life expectancy ']
+
+X = train.drop(columns=['Life expectancy '])
+
 
 X.columns.tolist()
 #X.dtypes
 
-krr = GridSearchCV(
-    KernelRidge(),
-    param_grid={"alpha": [2e0, 2.1, 5, 10,1e0, 0.1, 1e-2, 1e-3], 'kernel':('linear','polynomial','laplacian')},
-)
+model = GridSearchCV(KernelRidge(), param_grid={"alpha": [2e0, 2.1, 5, 10, 1e0, 0.1, 1e-2, 1e-3], 'kernel':('linear', 'polynomial', 'laplacian')}, )
 
-krr.fit(X, y)
-krr.get_params()
+model.fit(X, y)
+print(model.get_params())
 
 
 print(len(test['ID']))
@@ -130,7 +168,7 @@ test = test.drop(columns = ['ID'])
 test.columns.tolist()
 #test.dtypes
 
-predict = krr.predict(test)
+predict = model.predict(test)
 predict = {'Life expectancy ': predict}
 predict = pd.DataFrame(predict)
 print(predict.shape,IDs.shape)

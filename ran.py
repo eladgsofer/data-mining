@@ -116,34 +116,38 @@ train["Life expectancy "] = (train["Life expectancy "] - mean).div(std)
 
 
 def remove_outliers(x):
-
+    # These values are as a result that Ran normalized diffrently
     filter_mapper = {"Adult Mortality": (train['Life expectancy '] < 0.22) & (x["Adult Mortality"] < -0.6),
-                     # "under-five deaths ": x["under-five deaths "] > 2,
+                     "under-five deaths ": x["under-five deaths "] > 2,
                      "Schooling": (x["Schooling"] < -3.3)}
 
 
     #  "dipheteria", "GDP"
-    for feature in ["Adult Mortality", "under-five deaths ", "Schooling"]:
+    for feature in filter_mapper.keys():
+        # Plotting before the outliers removal
         sns.pairplot(train[[feature, "Life expectancy "]])
         outliers_filter = filter_mapper[feature]
 
         x_not_outliers = x[~outliers_filter]
 
+        # the normal data
         x_not_outliers_f1 = x_not_outliers[feature]
         y_not_outliers_f1 = x_not_outliers['Life expectancy ']
 
+        # outliers' labels
         y_outliers = train.loc[outliers_filter, 'Life expectancy ']
 
+        # Train the inverse function upon all the rest of the data (not the outliers)
         f_1_model = sm.OLS(x_not_outliers_f1,y_not_outliers_f1).fit()
 
 
         # receive the y and do the inverse f^-1(y) = x
         train.loc[outliers_filter, feature] = f_1_model.predict(y_outliers)
+
+        # Plotting after the outliers removal
         sns.pairplot(train[[feature, "Life expectancy "]])
 
-        pass
-
-# remove_outliers(train)
+remove_outliers(train)
 
 
 y = train['Life expectancy ']
@@ -193,3 +197,4 @@ result  = pd.DataFrame({
 result['Life expectancy'] = (result['Life expectancy'] *(std))+mean
 
 result.to_csv('submission.csv',index=False)
+pass

@@ -23,7 +23,7 @@ np.random.seed(10)
 train = pd.read_csv("train.csv")
 test = pd.read_csv("test.csv")
 
-train.columns
+COLUMNS_TO_DROP = [' BMI ', 'Population', ' thinness  1-19 years', ' thinness 5-9 years', 'Income composition of resources', 'Hepatitis B']
 
 
 #country embeding
@@ -117,9 +117,11 @@ train["Life expectancy "] = (train["Life expectancy "] - mean).div(std)
 
 def remove_outliers(x):
     # These values are as a result that Ran normalized diffrently
-    filter_mapper = {"Adult Mortality": (train['Life expectancy '] < 0.22) & (x["Adult Mortality"] < -0.6),
-                     "under-five deaths ": x["under-five deaths "] > 2,
-                     "Schooling": (x["Schooling"] < -3.3)}
+    filter_mapper = {
+        # "Adult Mortality": (train['Life expectancy '] < 0.22) & (x["Adult Mortality"] < -0.6),
+        # "under-five deaths ": x["under-five deaths "] > 2,
+        # "Schooling": (x["Schooling"] < -3.3),
+        "Measles ": (x["Measles "] > 9.5)}
 
 
     #  "dipheteria", "GDP"
@@ -138,24 +140,26 @@ def remove_outliers(x):
         y_outliers = train.loc[outliers_filter, 'Life expectancy ']
 
         # Train the inverse function upon all the rest of the data (not the outliers)
-        f_1_model = sm.OLS(x_not_outliers_f1,y_not_outliers_f1).fit()
+        f_1_model = sm.OLS(x_not_outliers_f1, y_not_outliers_f1).fit()
 
 
         # receive the y and do the inverse f^-1(y) = x
+        # HIV = square
         train.loc[outliers_filter, feature] = f_1_model.predict(y_outliers)
 
         # Plotting after the outliers removal
         sns.pairplot(train[[feature, "Life expectancy "]])
 
-remove_outliers(train)
+# remove_outliers(train)
 
 
 y = train['Life expectancy ']
 
+
 X = train.drop(columns=['Life expectancy '])
+X.drop(columns=COLUMNS_TO_DROP , axis=1, inplace=True)
 
-
-X.columns.tolist()
+print(X.columns.tolist())
 #X.dtypes
 
 model = GridSearchCV(KernelRidge(), param_grid={"alpha": [2e0, 2.1, 5, 10, 1e0, 0.1, 1e-2, 1e-3], 'kernel':('linear', 'polynomial', 'laplacian')}, )
@@ -166,7 +170,7 @@ print(model.get_params())
 
 print(len(test['ID']))
 IDs = test['ID'].reset_index()
-test = test.drop(columns = ['ID'])
+test = test.drop(columns = ['ID'] + COLUMNS_TO_DROP)
 
 
 test.columns.tolist()
